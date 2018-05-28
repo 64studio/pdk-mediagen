@@ -1,0 +1,12 @@
+Source: pdk-mediagen
+Priority: optional
+Section: devel
+Maintainer: Christopher Obbard <chris@64studio.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 3.9.8
+
+Package: pdk-mediagen
+Architecture: all
+#Depends: ${misc:Depends}, pdk
+Depends: ${misc:Depends}
+Description: PDK Mediagen component

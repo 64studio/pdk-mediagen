@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+#
+# Copyright (C) 2018 Christopher Obbard <chris@64studio.com>
+#
+#
+
+# command-line arguments
+PDK_WORKSPACE="$1"
+PDK_COMPONENT="$2"
+
+# full path to the component meta xml file
+PDK_COMPONENT_FILE="$PDK_WORKSPACE/$PDK_COMPONENT"
+
+# full path to the apt repo
+PDK_REPO="$PDK_WORKSPACE/repo"
+
+# full path to build env
+BUILDENV="$PDK_WORKSPACE/tmp"
+
+# full path to the rootfs
+ROOTFS="$BUILDENV/rootfs"
+
+# full path to the mediagen script
+SCRIPTPATH="$(cd "$(dirname "$0")"; pwd -P)"
+
+# include mediagen functions
+. $SCRIPTPATH/functions.sh
+
+# check root is running the script
+if [ $EUID -ne 0 ]; then
+  error "you must run as root"
+  exit 1
+fi
+
+# check workspace exists
+if [ ! -d $PDK_WORKSPACE ]; then
+  error "cannot find PDK workspace"
+  exit 1
+fi
+
+# check component file exists
+if [ ! -f $PDK_COMPONENT_FILE ]; then
+  error "cannot find PDK component"
+  exit 1
+fi
+
+# check repo has been created
+if [ ! -d $PDK_REPO ]; then
+  error "cannot find repo! please run repogen first"
+  exit 1
+fi
+
+# get configuration options
+# TODO: sanitize options better
+RECIPE=$(read_meta "mediagen.recipe")
+if [ -z "$RECIPE" ]; then
+  error "mediagen.recipe not found"
+  exit 1
+fi
+
+ARCH=$(read_meta "mediagen.debarch")
+if [ -z "$ARCH" ]; then
+  error "mediagen.debarch not found"
+  exit 1
+fi
+
+ROOTSIZE=$(read_meta "mediagen.rootsize")
+if [ -z "$ROOTSIZE" ]; then
+  error "mediagen.rootsize not found"
+  exit 1
+fi
+
+BOOTSIZE=$(read_meta "mediagen.bootsize")
+if [ -z "$BOOTSIZE" ]; then
+  error "mediagen.bootsize not found"
+  exit 1
+fi
+
+OUTFILE=$(read_meta "mediagen.outfile")
+if [ -z "$OUTFILE" ]; then
+  error "mediagen.outfile not found"
+  exit 1
+fi
+
+# TODO: move these config options elsewhere?
+HOSTNAME=$(read_meta "mediagen.hostname")
+if [ -z "$HOSTNAME" ]; then
+  info "mediagen.hostname not found; defaulting to 'pdk'"
+  HOSTNAME="pdk"
+fi
+
+ROOT_PASSWORD=$(read_meta "mediagen.root_password")
+if [ -z "$ROOT_PASSWORD" ]; then
+  info "mediagen.root_password not found; defaulting to 'toor'"
+  ROOT_PASSWORD="toor"
+fi
+
+PRESEED=$(read_meta "mediagen.preseed-conf")
+if [ -z "$PRESEED" ]; then
+  info "mediagen.preseed-conf not found; disabling"
+fi
+
+POSTINST=$(read_meta "mediagen.postinst-script")
+if [ -z "$POSTINST" ]; then
+  info "mediagen.postinst-script not found; disabling"
+fi
+
+# get the codename
+# TODO: read codename directly from pdk
+CODENAME=$(ls "$PDK_REPO/dists" | head -1)
+if [ -z "$CODENAME" ]; then
+  error "codename not found"
+  exit 1
+fi
+
+
+# start !
+IMAGE="$BUILDENV/$OUTFILE"
+
+# purge old build env
+rm -rf $IMAGE
+rm -rf $BUILDENV
+mkdir -p $BUILDENV
+
+# create blank image $ROOTSIZE blocks long
+info "creating blank image $IMAGE"
+dd if=/dev/zero of=$IMAGE bs=1MiB count=$ROOTSIZE >& /dev/null
+
+# create partition table
+#
+#  first 2kb bootloader & partition table,
+#  next ${BOOTSIZE} mb FAT32,
+#  rest of disk rootfs
+info "creating filesystems"
+fdisk $IMAGE &>/dev/null << EOF
+n
+p
+1
+2048
++${BOOTSIZE}M
+t
+c
+a
+1
+n
+p
+2
+
+
+w
+EOF
+
+# create device map
+info "creating loop device"
+DEVICE=`kpartx -a -v $IMAGE | sed -E 's/.*(loop[0-9])p.*/\1/g' | head -1`
+sleep 1
+
+DEVICE_BOOTFS="/dev/mapper/${DEVICE}p1"
+DEVICE_ROOTFS="/dev/mapper/${DEVICE}p2"
+info "created loop device $DEVICE"
+
+# format
+info "formatting filesystems"
+mkfs.vfat $DEVICE_BOOTFS >& /dev/null
+mkfs.ext4 $DEVICE_ROOTFS >& /dev/null
+
+# mount
+info "mounting rootfs"
+mkdir -p $ROOTFS
+mount $DEVICE_ROOTFS $ROOTFS
+
+mkdir -p ${ROOTFS}/boot
+mount $DEVICE_BOOTFS ${ROOTFS}/boot
+
+# do evil things to the rootfs here
+
+# loop over all of the scripts
+for SHELL_SCRIPT in $SCRIPTPATH/scripts/*.sh; do
+  # get the name of the script without the full path
+  SHELL_SCRIPT_NAME=$(echo $SHELL_SCRIPT | rev | cut -d "/" -f1 | rev)
+
+  # run it!
+  info "Running $SHELL_SCRIPT_NAME"
+  . "$SHELL_SCRIPT"
+done
+
+# stop the doing evil things to the rootfs here
+
+# unmount
+info "cleaning up"
+info "unmounting rootfs"
+cd $SCRIPTPATH
+sleep 2
+umount $DEVICE_BOOTFS
+umount $DEVICE_ROOTFS
+
+# remove the device maps
+info "removing loop devices"
+kpartx -d $IMAGE >& /dev/null
+sleep 2
+
+# exit
+info "completed!"
+exit 0
