@@ -7,6 +7,5 @@ Standards-Version: 3.9.8
 
 Package: pdk-mediagen
 Architecture: all
-#Depends: ${misc:Depends}, pdk
-Depends: ${misc:Depends}
-Description: PDK Mediagen component
+Depends: ${misc:Depends}, pdk, debootstrap, qemu-user-static, kpartx, dosfstools, whois
+Description: PDK Media Geneneration
