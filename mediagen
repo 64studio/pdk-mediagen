@@ -89,9 +89,9 @@ if [ -z "$HOSTNAME" ]; then
   HOSTNAME="pdk"
 fi
 
-ROOT_PASSWORD=$(read_meta "mediagen.root_password")
+ROOT_PASSWORD=$(read_meta "mediagen.root-password")
 if [ -z "$ROOT_PASSWORD" ]; then
-  info "mediagen.root_password not found; defaulting to 'toor'"
+  info "mediagen.root-password not found; defaulting to 'toor'"
   ROOT_PASSWORD="toor"
 fi
 
@@ -104,6 +104,12 @@ POSTINST=$(read_meta "mediagen.postinst-script")
 if [ -z "$POSTINST" ]; then
   info "mediagen.postinst-script not found; disabling"
 fi
+
+REPO_URL=$(read_meta "mediagen.repo-url")
+if [ -z "$REPO_URL" ]; then
+  info "mediagen.repo-url not found; disabling"
+fi
+
 
 # get the codename
 # TODO: read codename directly from pdk

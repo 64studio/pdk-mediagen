@@ -6,7 +6,7 @@ chroot_exec apt-get install locales debconf-utils --yes
 
 # install archive keyring
 # TODO: fix this
-#chroot_exec apt-key add /media/apt/dists/$CODENAME/archive-keyring.pub
+#chroot_exec apt-key add /media/apt/dists/$CODENAME/archive-keyring.asc
 
 # TODO: remove after testing
 #chroot_exec apt-key list

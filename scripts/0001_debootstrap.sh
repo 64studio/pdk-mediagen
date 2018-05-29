@@ -13,4 +13,3 @@ cp /usr/bin/qemu-arm-static $ROOTFS/usr/bin/
 # actually install the packages
 info "Debootstrapping system (second-stage)"
 chroot_exec /debootstrap/debootstrap --second-stage
-
