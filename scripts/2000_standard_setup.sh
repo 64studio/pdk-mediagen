@@ -6,7 +6,7 @@ chroot_exec apt-get install locales debconf-utils --yes
 
 # install archive keyring
 # TODO: fix this
-#chroot_exec apt-key add /media/apt/dists/$CODENAME/archive-keyring.asc
+#chroot_exec apt-key add /media/apt/archive-keyring.asc
 
 # TODO: remove after testing
 #chroot_exec apt-key list
@@ -17,7 +17,7 @@ echo "en_GB.UTF-8 UTF-8" > $ROOTFS/etc/locale.gen
 chroot_exec locale-gen
 
 # install preseed
-if [ -f "$PDK_WORKSPACE/$PRESEED" ]; then
+if [ ! -z "$PRESEED" ] && [ -f "$PDK_WORKSPACE/$PRESEED" ]; then
   info "installing preseed $PRESEED"
   cp "$PDK_WORKSPACE/$PRESEED" "$ROOTFS/tmp/preseed.conf"
   chroot_exec debconf-set-selections /tmp/preseed.conf

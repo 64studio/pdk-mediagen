@@ -3,8 +3,11 @@ umount $ROOTFS/media/apt
 
 # setup http apt repo
 # TODO: install apt-key and not do this trusted
-echo "deb [trusted=yes] $REPO_URL $CODENAME main" > $ROOTFS/etc/apt/sources.list
-echo "deb-src [trusted=yes] $REPO_URL $CODENAME main" >> $ROOTFS/etc/apt/sources.list
+# TODO: install sources
+echo "" > $ROOTFS/etc/apt/sources.list
+if [ ! -z "$REPO_URL" ]; then
+  echo "deb [trusted=yes] $REPO_URL $CODENAME main" > $ROOTFS/etc/apt/sources.list
+fi
 
 # clean up apt
 # TODO: have we gone over the top?

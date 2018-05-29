@@ -1,7 +1,7 @@
 # debootstrap a basic Debian system
 info "Debootstrapping system (first-stage)"
 DEB_MIRROR="file://$PDK_REPO"
-KEYRING="$PDK_REPO/dists/$CODENAME/archive-keyring.gpg"
+KEYRING="$PDK_REPO/archive-keyring.gpg"
 
 # TODO: codename has to be buster/stretch etc
 debootstrap --foreign --arch="$ARCH" --keyring="$KEYRING" "$CODENAME" "$ROOTFS" "$DEB_MIRROR"
