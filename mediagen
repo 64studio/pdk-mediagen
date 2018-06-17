@@ -17,6 +17,9 @@ PDK_REPO="$PDK_WORKSPACE/repo"
 # full path to build env
 BUILDENV="$PDK_WORKSPACE/tmp"
 
+# temp image file
+IMAGE="$BUILDENV/tmp.img"
+
 # full path to the rootfs
 ROOTFS="$BUILDENV/rootfs"
 
@@ -120,16 +123,13 @@ if [ -z "$CODENAME" ]; then
 fi
 
 
-# start !
-IMAGE="$BUILDENV/$OUTFILE"
-
 # purge old build env
 rm -rf $IMAGE
 rm -rf $BUILDENV
 mkdir -p $BUILDENV
 
 # create blank image $ROOTSIZE blocks long
-info "creating blank image $IMAGE"
+info "creating blank image"
 dd if=/dev/zero of=$IMAGE bs=1MiB count=$ROOTSIZE >& /dev/null
 
 # create partition table
@@ -204,6 +204,16 @@ umount $DEVICE_ROOTFS
 info "removing loop devices"
 kpartx -d $IMAGE >& /dev/null
 sleep 2
+
+# move the image from the tmp dir to the workspace
+# TODO: don't do this if it has failed
+OUTFILE="$PDK_WORKSPACE/$OUTFILE"
+rm -rf "$OUTFILE"
+mv "$IMAGE" "$OUTFILE"
+chown --reference="$PDK_COMPONENT_FILE" "$OUTFILE"
+
+# remove the tmp dir
+rm -rf $BUILDENV
 
 # exit
 info "completed!"
