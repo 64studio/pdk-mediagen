@@ -6,11 +6,10 @@ error() {
   echo "E: pdk-mediagen: $*"
 }
 
-# hack to get configuration option from pdk :-)
-# TODO: implement this in pdk source
+# get configuration option from pdk component file
 read_meta() {
   CONFNAME=$1
-  CONF=$(pdk dumpmeta $PDK_COMPONENT | grep -F "$PDK_COMPONENT|" | grep -F "|$CONFNAME|" | rev | cut -d "|" -f1 | rev)
+  CONF=$(pdk listmeta $PDK_COMPONENT | grep -F "$CONFNAME|" | rev | cut -d "|" -f1 | rev)
   if [ -z "$CONF" ]; then
     exit 1
   fi
