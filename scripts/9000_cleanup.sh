@@ -11,7 +11,7 @@ fi
 
 # clean up apt
 # TODO: have we gone over the top?
-chroot_exec apt-get autoclean
+chroot_exec apt-get autoclean > /dev/null
 chroot_exec apt-get clean
 chroot_exec apt-get purge
 chroot_exec apt-get update
