@@ -1,3 +1,9 @@
+pdk-mediagen (0.0.2~alpha1) unstable; urgency=medium
+
+  * Prepare release 0.0.2~alpha1
+
+ -- Christopher Obbard <chris@64studio.com>  Tue, 26 Jun 2018 19:14:50 +0100
+
 pdk-mediagen (0.0.1) unstable; urgency=medium
 
   * Initial release.
