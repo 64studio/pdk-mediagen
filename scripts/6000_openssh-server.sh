@@ -2,11 +2,16 @@
 # install ssh server
 chroot_exec apt-get install openssh-server --yes
 
-# allow root logins (this is temporary, do not worry)
+# disable ssh server (this is enabled once keys are re-generated)
+chroot_exec systemctl disable ssh
+
+# allow root logins
+# TODO: accept configuration option
 sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' $ROOTFS/etc/ssh/sshd_config
 
 # startup script to generate new ssh host keys
-# TODO: does this work?
+# TODO: check if this works
+# TODO: update to systemd service
 rm -f $ROOTFS/etc/ssh/ssh_host_*
 cat << EOF > $ROOTFS/etc/init.d/ssh_gen_host_keys
 #!/bin/sh
@@ -22,11 +27,13 @@ cat << EOF > $ROOTFS/etc/init.d/ssh_gen_host_keys
 systemctl stop ssh
 ssh-keygen -f /etc/ssh/ssh_host_rsa_key -t rsa -N ""
 ssh-keygen -f /etc/ssh/ssh_host_dsa_key -t dsa -N ""
+ssh-keygen -f /etc/ssh/ssh_host_ecdsa_key -t ecdsa -N ""
+ssh-keygen -f /etc/ssh/ssh_host_ed25519_key -t ed25519 -N ""
 update-rc.d ssh_gen_host_keys disable
 update-rc.d ssh_gen_host_keys remove
 update-rc.d ssh defaults
-systemctl start ssh
 systemctl enable ssh
+systemctl start ssh
 
 # remove the script
 rm -f \$0
