@@ -100,17 +100,17 @@ fi
 
 PRESEED=$(read_meta "mediagen.preseed-conf")
 if [ -z "$PRESEED" ]; then
-  info "mediagen.preseed-conf not found; disabling"
+  info "mediagen.preseed-conf not found; no preseed file selected"
 fi
 
 POSTINST=$(read_meta "mediagen.postinst-script")
 if [ -z "$POSTINST" ]; then
-  info "mediagen.postinst-script not found; disabling"
+  info "mediagen.postinst-script not found; no postinst script selected"
 fi
 
 REPO_URL=$(read_meta "mediagen.repo-url")
 if [ -z "$REPO_URL" ]; then
-  info "mediagen.repo-url not found; disabling"
+  info "mediagen.repo-url not found; set this to the apt repository url to use in target installation"
 fi
 
 
