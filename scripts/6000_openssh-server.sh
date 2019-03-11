@@ -2,18 +2,27 @@
 # install ssh server
 chroot_exec apt-get install openssh-server --yes
 
-# disable ssh server (this is enabled once keys are re-generated)
-chroot_exec systemctl disable ssh
-
 # allow root logins
 # TODO: accept configuration option
 sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' $ROOTFS/etc/ssh/sshd_config
 
-# startup script to generate new ssh host keys
-# TODO: check if this works
-# TODO: update to systemd service
-rm -f $ROOTFS/etc/ssh/ssh_host_*
-cat << EOF > $ROOTFS/etc/init.d/ssh_gen_host_keys
+# re-generate ssh keys at boot by default
+no_gen_keys=$(read_meta mediagen.openssh-server.no-gen-keys)
+if [ -z "$no_gen_keys" ]; then
+  no_gen_keys=false
+fi
+
+if [ "$no_gen_keys" = "false" ]; then
+  info "openssh-server: re-generating ssh keys on first boot"
+
+  # disable ssh server (this is enabled once keys are re-generated)
+  chroot_exec systemctl disable ssh
+
+  # startup script to generate new ssh host keys
+  # TODO: check if this works
+  # TODO: update to systemd service
+  rm -f $ROOTFS/etc/ssh/ssh_host_*
+  cat << EOF > $ROOTFS/etc/init.d/ssh_gen_host_keys
 #!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          Generates new ssh host keys on first boot
@@ -38,5 +47,10 @@ systemctl start ssh
 # remove the script
 rm -f \$0
 EOF
-chmod a+x $ROOTFS/etc/init.d/ssh_gen_host_keys
-chroot_exec update-rc.d ssh_gen_host_keys defaults
+  chmod a+x $ROOTFS/etc/init.d/ssh_gen_host_keys
+  chroot_exec update-rc.d ssh_gen_host_keys defaults
+else
+  # just enable the ssh server
+  # TODO: is this needed?
+  chroot_exec systemctl enable ssh
+fi
